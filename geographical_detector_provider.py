@@ -36,8 +36,6 @@ from qgis.PyQt.QtGui import QIcon
 
 from qgis.core import QgsProcessingProvider
 
-from geographical_detector_stratification import Stratification_gd
-# from testing_gui import RandomPointsPolygons
 from .geographical_detector_algorithm import Geo_detectorAlgorithm
 
 
