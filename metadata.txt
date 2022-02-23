@@ -1,0 +1,47 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=geographical_detector
+qgisMinimumVersion=3.0
+description=A tool of measure Spatial Stratified Heterogeneity and spatial associations of geographical attributes
+version=0.1
+author=Jiangang Guo
+email=guojg@lreis.ac.cn
+
+about=Spatial Stratified Heterogeneity (SSH) refers to the phenomena that the within strata are more similar than the between strata.Examples are land-use types and climate zones in spatial data. Geodetecor, i.e.,geographical detector , is a statistical tool to measure SSH and to make attribution for/by SSH; (1) measure and find SSH among data; (2) test the coupling between two variables Y and X and (3) investigate interaction between two explanatory variables X1 and X2 to a response variable Y..
+
+tracker=http://bugs
+repository=http://repo
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=yes
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=python, spatial analysis, stratification, spatial heterogeneity, geographical detector
+
+homepage=http://homepage
+category=Analysis
+icon=icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+Category of the plugin: Raster, Vector, Database or Web
+# category=Vector
+
+# If the plugin can run on QGIS Server.
+server=False
+
