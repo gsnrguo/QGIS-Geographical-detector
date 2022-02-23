@@ -6,13 +6,13 @@
 name=geographical_detector
 qgisMinimumVersion=3.0
 description=A tool for  measuring spatial stratified heterogeneity and spatial associations of geographical attributes
-version=0.1
+version=1.0.0
 author=Jiangang Guo
 email=guojg@lreis.ac.cn
 
 about=Spatial Stratified Heterogeneity (SSH) refers to the phenomena that the within strata are more similar than the between strata.Examples are land-use types and climate zones in spatial data. Geodetecor, i.e.,geographical detector , is a statistical tool to measure SSH and to make attribution for/by SSH; (1) measure and find SSH among data; (2) test the coupling between two variables Y and X and (3) investigate interaction between two explanatory variables X1 and X2 to a response variable Y..
 
-tracker=http://bugs
+tracker=https://github.com/GuoXiaoyin/QGIS-Geographical-detector/issues
 repository=https://github.com/GuoXiaoyin/QGIS-Geographical-detector
 # End of mandatory metadata
 
@@ -25,7 +25,7 @@ hasProcessingProvider=yes
 # Tags are comma separated with spaces allowed
 tags=python, spatial analysis, stratification, spatial heterogeneity, geographical detector
 
-homepage=http://homepage
+homepage=https://github.com/GuoXiaoyin/QGIS-Geographical-detector
 category=Analysis
 icon=icon.png
 # experimental flag
