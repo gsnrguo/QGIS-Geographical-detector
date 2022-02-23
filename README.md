@@ -1,6 +1,6 @@
 # QGIS-Geographical-detector
 
-QGIS-geographical detector plugin: Tool for measuring spatial stratified heterogeneity and spatial associations of geographical attributes
+QGIS-geographical detector plugin: Tool for measuring spatial stratified heterogeneity and spatial associations of geographical attributes.
 
 
 ## Geographical detector
