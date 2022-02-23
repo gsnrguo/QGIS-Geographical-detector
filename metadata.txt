@@ -5,7 +5,7 @@
 [general]
 name=geographical_detector
 qgisMinimumVersion=3.0
-description=A tool of measure Spatial Stratified Heterogeneity and spatial associations of geographical attributes
+description=A tool for  measuring spatial stratified heterogeneity and spatial associations of geographical attributes
 version=0.1
 author=Jiangang Guo
 email=guojg@lreis.ac.cn
