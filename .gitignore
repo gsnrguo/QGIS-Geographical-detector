@@ -1,0 +1,14 @@
+# ignore compiled python files
+*pyc
+plugin_template/*pyc
+.idea
+.coverage
+.noseids
+nohup.out
+resources.py
+
+# ignore the help build dir
+help/build
+
+# ignore the data dir
+data
