@@ -66,6 +66,8 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
     MAX_GROUP = 'MAX_GROUP'
     MIN_SAMPLES_GROUP = 'MIN_SAMPLES_GROUP'
     MIN_SAMPLES_SPLIT = 'MIN_SAMPLES_SPLIT'
+    EQUALITY_FIELD_NAME = "EQUALITY_FIELD_NAME"
+    MINIMUM_RATIO = "MINIMUM_RATIO"
     CV_SIZE = 'CV_SIZE'
     CV_SEED = 'SV_SEED'
     CV_TIMES = 'CV_TIMES'
@@ -127,6 +129,21 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         min_sample_group.setFlags(min_sample_group.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(min_sample_group)
 
+        # add equality constrains field
+        equality_field = QgsProcessingParameterField(self.EQUALITY_FIELD_NAME,
+                                                     self.tr('Field for equality constraint'),
+                                                     parentLayerParameterName=self.INPUT,
+                                                     type=QgsProcessingParameterField.Any,
+                                                     optional=True)
+        equality_field.setFlags(equality_field.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(equality_field)
+
+        min_ratio = QgsProcessingParameterNumber(self.MINIMUM_RATIO, self.tr('Minimum ratio for equality measure'),
+                                                 minValue=0, maxValue=1, type=QgsProcessingParameterNumber.Double,
+                                                 defaultValue=0)
+        min_ratio.setFlags(min_ratio.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(min_ratio)
+
         cv_size = QgsProcessingParameterNumber(self.CV_SIZE, self.tr('Cross-validation number'), minValue=2,
                                                defaultValue=10)
         cv_size.setFlags(cv_size.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -178,6 +195,9 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         max_group = self.parameterAsInt(parameters, self.MAX_GROUP, context)
         min_group = self.parameterAsInt(parameters, self.MIN_GROUP, context)
         min_sample = self.parameterAsInt(parameters, self.MIN_SAMPLES_GROUP, context)
+        pop_field = self.parameterAsString(parameters, self.EQUALITY_FIELD_NAME, context)
+        pop_threshold = self.parameterAsInt(parameters, self.MINIMUM_RATIO, context)
+
         cv_fold = self.parameterAsInt(parameters, self.CV_SIZE, context)
         cv_random_seed = self.parameterAsInt(parameters, self.CV_SEED, context)
         cv_rep = self.parameterAsInt(parameters, self.CV_TIMES, context)
@@ -201,6 +221,7 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         else:
             cols = category_field_names + numerical_field_names
             cols.insert(0, value_field_name)
+            cols.insert(0, pop_field)
 
         # create the geo-detector raw data
         data_gen = ([f[col] for col in cols] for f in features)
@@ -213,6 +234,10 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         y = df[value_field_name]
         if not pd.api.types.is_numeric_dtype(y):
             raise TypeError('Study variable is not of a numeric type')
+        pop_data = df[pop_field]
+        if not pd.api.types.is_numeric_dtype(pop_data):
+            raise TypeError('Equality variable is not of a numeric type')
+        pop_data = pop_data.to_numpy()
 
         # stratification
         if len(numerical_field_names) > 0:
@@ -225,7 +250,8 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
                     xdata = df[x]
                     gd_x = op_st.optimal_geo_detector(x=xdata.to_numpy(), y=y.to_numpy(), min_group=min_group,
                                                       min_samples_group=min_sample,
-                                                      max_group=max_group,
+                                                      max_group=max_group, pop_data=pop_data,
+                                                      pop_threshold=pop_threshold,
                                                       cv_seed=cv_random_seed, cv_fold=cv_fold, cv_times=cv_rep)
                     x_group = gd_x.group_interval
                     cat_x_name = 'Cat_' + x
