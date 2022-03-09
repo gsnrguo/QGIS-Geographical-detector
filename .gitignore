@@ -12,3 +12,4 @@ help/build
 
 # ignore the data dir
 data
+pygd
