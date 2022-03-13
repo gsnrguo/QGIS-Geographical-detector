@@ -389,7 +389,10 @@ class optimal_geo_detector:
                 select = np.in1d(option_cut, i)
                 train_y, test_y = self.y[~select], self.y[select]
                 train_x, test_x = self.x[~select], self.x[select]
-                pop_train = self.pop_data[~select]
+                if self.pop_data is not None:
+                    pop_train = self.pop_data[~select]
+                else:
+                    pop_train = None
                 groups, split_info = self.split(train_x, train_y, pop_data=pop_train)
                 nodes = split_info.loc[split_info['node_type'] == 'split_node', 'node'].to_numpy()
                 cut_groups = self._cv_info(train_y, groups, nodes, alpha)
@@ -712,3 +715,16 @@ class optimal_geo_detector:
         sort_labs = sort_lab[in2]
 
         return inter_labs[recover_rank], sort_labs[recover_rank], lab_info
+
+    def predict_strata(self):
+        """
+        predict strata labels based on sampling data
+        Returns:
+            groups
+
+        """
+        pass
+
+
+if __name__ == '__main__':
+    pass

@@ -35,6 +35,7 @@ import numpy as np
 import pandas as pd
 # import pydevd_pycharm
 from qgis.PyQt.QtCore import QCoreApplication
+# from qgis.core import QgsProcessingException
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
@@ -72,6 +73,7 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
     CV_SEED = 'SV_SEED'
     CV_TIMES = 'CV_TIMES'
     INTERPOLATION_DATA = 'INTERPOLATION_DATA'
+    IMPROVING_Q = 'IMPROVING_Q'
 
     def __init__(self):
         super().__init__()
@@ -140,9 +142,15 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
 
         min_ratio = QgsProcessingParameterNumber(self.MINIMUM_RATIO, self.tr('Minimum ratio for equality measure'),
                                                  minValue=0, maxValue=1, type=QgsProcessingParameterNumber.Double,
-                                                 defaultValue=0)
+                                                 defaultValue=0, optional=True)
         min_ratio.setFlags(min_ratio.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(min_ratio)
+
+        improving_q = QgsProcessingParameterNumber(self.IMPROVING_Q, self.tr('Minimum threshold for q-value increase'),
+                                                   minValue=0, maxValue=1, type=QgsProcessingParameterNumber.Double,
+                                                   defaultValue=0, optional=True)
+        improving_q.setFlags(min_ratio.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(improving_q)
 
         cv_size = QgsProcessingParameterNumber(self.CV_SIZE, self.tr('Cross-validation number'), minValue=2,
                                                defaultValue=10)
@@ -170,7 +178,7 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
 
     # add help/introduction windows
     def shortDescription(self):  # pylint: disable=missing-docstring
-        desc_file = "GeoDetector, i.e. Geographical Detector, is a statistical tool to measure Spatial Stratified " \
+        desc_file = "Q-GD “QGIS-geographical detector” is a statistical tool to measure Spatial Stratified " \
                     "Heterogeneity(SSH) and test the coupling between two variables Y (Study variable) and X " \
                     "(Explanatory variable), according to their SSHs, without assumption of linearity of the " \
                     "association. In " \
@@ -196,8 +204,8 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         min_group = self.parameterAsInt(parameters, self.MIN_GROUP, context)
         min_sample = self.parameterAsInt(parameters, self.MIN_SAMPLES_GROUP, context)
         pop_field = self.parameterAsString(parameters, self.EQUALITY_FIELD_NAME, context)
-        pop_threshold = self.parameterAsInt(parameters, self.MINIMUM_RATIO, context)
-
+        pop_threshold = self.parameterAsDouble(parameters, self.MINIMUM_RATIO, context)
+        inc_q = self.parameterAsDouble(parameters, self.IMPROVING_Q, context)
         cv_fold = self.parameterAsInt(parameters, self.CV_SIZE, context)
         cv_random_seed = self.parameterAsInt(parameters, self.CV_SEED, context)
         cv_rep = self.parameterAsInt(parameters, self.CV_TIMES, context)
@@ -252,7 +260,8 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
                                                       min_samples_group=min_sample,
                                                       max_group=max_group, pop_data=pop_data,
                                                       pop_threshold=pop_threshold,
-                                                      cv_seed=cv_random_seed, cv_fold=cv_fold, cv_times=cv_rep)
+                                                      cv_seed=cv_random_seed, cv_fold=cv_fold, cv_times=cv_rep,
+                                                      min_delta_q=inc_q)
                     x_group = gd_x.group_interval
                     cat_x_name = 'Cat_' + x
                     df[cat_x_name] = x_group
@@ -289,7 +298,7 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'GeoDetector'
+        return 'Q_GD'
 
     def displayName(self):
         """

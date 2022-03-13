@@ -69,7 +69,7 @@ class Geo_detectorProvider(QgsProcessingProvider):
         string should be a unique, short, character only string, eg "qgis" or
         "gdal". This string should not be localised.
         """
-        return 'Geo-detector'
+        return 'Geographical detector'
 
     def name(self):
         """
@@ -78,7 +78,7 @@ class Geo_detectorProvider(QgsProcessingProvider):
 
         This string should be short (e.g. "Lastools") and localised.
         """
-        return self.tr('Geo-detector')
+        return self.tr('Geographical detector')
 
     def icon(self):
         """

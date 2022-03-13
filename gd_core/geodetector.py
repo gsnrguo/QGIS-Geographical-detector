@@ -19,6 +19,15 @@ gd_path = os.path.dirname(__file__)
 
 class GeoDetector(object):
     def __init__(self, data, x_names, y_name, save_path=None, alpha=0.05):
+        """
+
+        Args:
+            data:
+            x_names:
+            y_name:
+            save_path:
+            alpha:
+        """
         #
         self.file_name = None
         self.x_names = x_names
@@ -44,18 +53,17 @@ class GeoDetector(object):
         """
         Compares the accumulated dispersion variance of each sub-groups with the dispersion variance of the all
         """
-        factor_result = pd.DataFrame(columns=["q", "p-value"])
+        len_x = len(self.x_names)
+        factor_result = pd.DataFrame({"q": [0] * len_x, "p-value": [0] * len_x, "num_strata": [0] * len_x})
+        factor_result.index = self.x_names
         for x_name in self.x_names:
             data_i = self.data[[x_name, self.y_name]]
             mean_h = data_i.groupby(x_name)[self.y_name].mean()
             var_h = data_i.groupby(x_name)[self.y_name].agg(np.var, ddof=0)
             n_h = data_i.groupby(x_name)[self.y_name].count()
             q_i, sig_i = self._q_calculate(mean_h, var_h, n_h)
-            factor_result = factor_result.append(
-                pd.DataFrame({"q": [q_i], "p-value": [sig_i]}),
-                ignore_index=True,
-            )
-        factor_result.index = self.x_names
+            factor_result.loc[x_name, :] = [q_i, sig_i, len(n_h)]
+
         return factor_result
 
     @property
@@ -320,3 +328,6 @@ class GeoDetector(object):
         return worksheet
 
 
+if __name__ == '__main__':
+    testdata = pd.read_csv("../data/collectdata.csv")
+    gd_result = GeoDetector(testdata, ["watershed"], "incidence", alpha=0.05)

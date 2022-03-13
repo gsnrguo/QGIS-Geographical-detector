@@ -64,15 +64,15 @@ class Geo_detectorPlugin(object):
         icon = os.path.join(os.path.join(cmd_folder, 'icon.png'))
         self.action = QAction(
             QIcon(icon),
-            u"Geographic detector", self.iface.mainWindow())
+            u"Geographical detector", self.iface.mainWindow())
         self.action.triggered.connect(self.run)
-        self.iface.addPluginToMenu(u"&Geographic detector", self.action)
+        self.iface.addPluginToMenu(u"&Geographical detector", self.action)
         self.iface.addToolBarIcon(self.action)
 
     def unload(self):
         # We will also need to add code to the unload method, to remove these elements when plugin is removed.
         QgsApplication.processingRegistry().removeProvider(self.provider)
-        self.iface.removePluginMenu(u"&Geographic detector", self.action)
+        self.iface.removePluginMenu(u"&Geographical detector", self.action)
         self.iface.removeToolBarIcon(self.action)
 
     def run(self):
