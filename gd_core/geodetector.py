@@ -39,7 +39,7 @@ class GeoDetector(object):
             self.save_path = os.getcwd()
         for x_name in x_names:
             if data[x_name].values[0] is not str:
-                data[x_name] = data[x_name].astype(str)
+                data.loc[:, x_name] = data[x_name].astype(str).to_numpy()
         self.data = data
         self.n = len(data)
         #
@@ -49,9 +49,11 @@ class GeoDetector(object):
         self.len_x = len(self.x_names)
         self.factor_detector = self._factor_detector()
 
+        pd.set_option('mode.chained_assignment', None)
+
     def _factor_detector(self):
         """
-        Compares the accumulated dispersion variance of each sub-groups with the dispersion variance of the all
+        Compares the accumulated dispersion variance of each sub-group with the dispersion variance of the all
         """
         len_x = len(self.x_names)
         factor_result = pd.DataFrame({"q": [0] * len_x, "p-value": [0] * len_x, "num_strata": [0] * len_x})
@@ -116,8 +118,6 @@ class GeoDetector(object):
         fuc_value = np.array([[i.min(), i.max(), i.sum()] for i in index_com_value])
         df_index = combinations(self.x_names, 2)
         df_index = [i for i in df_index]
-        # cols = ['inter_min', 'inter_max', 'inter_sum']
-        # df_func = pd.DataFrame(data=fuc_value, index=df_index, columns=cols)
         df_interaction = pd.DataFrame(index=df_index, columns=['inter_value', 'inter_action'])
 
         interaction_result_q = np.diag(q)

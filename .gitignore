@@ -13,3 +13,4 @@ help/build
 # ignore the data dir
 data
 pygd
+gd_core/__pycache__

@@ -34,6 +34,8 @@ class optimal_geo_detector:
                  lst_alpha=0.05,
                  pop_data=None,
                  pop_threshold=0,
+                 max_sample=None,
+                 sample_random_seed=None,
                  ccp_alpha=0.0):
         """
 
@@ -62,8 +64,23 @@ class optimal_geo_detector:
             self.cv_seed = [cv_seed]
         self.criterion = criterion
         self.min_group = min_group
+
+        #
+        len_pop = len(y)
+        self.pop_y = y
+        self.pop_x = x
+
+        if max_sample is not None:
+            sam_rng = np.random.default_rng(seed=sample_random_seed)
+            sam_index = sam_rng.choice(range(len_pop), size=max_sample, replace=False)
+            self.x = x[sam_index]
+            self.y = y[sam_index]
+        else:
+            self.x = x
+            self.y = y
+
         if max_group is None:
-            self.max_group = int(len(y) / min_samples_group)
+            self.max_group = int(len(self.y) / min_samples_group)
         else:
             self.max_group = max_group
 
@@ -80,17 +97,14 @@ class optimal_geo_detector:
             self.lst_alpha = lst_alpha
         else:
             self.lst_alpha = 1
-            if self.fix_group * min_samples_group > len(y):
+            if self.fix_group * min_samples_group > len(self.y):
                 warnings.warn('The fixed number of groups is too lager or the min_samples in groups is too larger')
 
         self.ccp_alpha = ccp_alpha
         self.ccp_alpha_ls = []
         self.min_delta_q = min_delta_q
 
-        self.y = y
-        self.x = x
-        self.group = np.ones(len(x))
-        self.sst = np.sum(pow(y - np.mean(y), 2))
+        self.sst = np.sum(pow(self.y - np.mean(self.y), 2))
 
         self.split_group, self.metric = self.split(x=self.x, y=self.y, pop_data=self.pop_data)
         if len(set(self.split_group)) < self.max_group:
@@ -102,6 +116,9 @@ class optimal_geo_detector:
             self.alpha_list = pd.DataFrame([])
 
         self.groups = self.stratification()
+        if max_sample is not None:
+            self.groups = self.predict_strata(self.groups, self.x, self.pop_x)
+
         self.group_interval, self.sort_labs, self.lab_info = self.groups2interval()
 
     # @property
@@ -148,7 +165,7 @@ class optimal_geo_detector:
         x = x[rank_index]
         if pop_data is not None:
             pop_data = pop_data[rank_index]
-        alt_cut = np.diff(np.insert(x, 0, x[0])) != 0  # the same x is should not be split
+        alt_cut = np.diff(np.insert(x, 0, x[0])) != 0  # the same x should not be split
         group_list = [np.arange(len(y))]
         groups = np.ones(len(y)).astype(int)
         group_lab = [1]  # initial group lab
@@ -400,7 +417,7 @@ class optimal_geo_detector:
                 root_mse.append(pow(mse_i, 0.5))
 
             mean_cv = np.mean(root_mse)
-            std_cv = np.std(root_mse) / self.cv
+            std_cv = np.std(root_mse) / pow(self.cv, 0.5)
 
             root_mse_info.append(mean_cv)
             root_mse_std.append(std_cv)
@@ -543,51 +560,30 @@ class optimal_geo_detector:
 
         return sse
 
-    @staticmethod
-    def predict(groups, train_x, train_y, test_x, test_y):
+    # @staticmethod
+    def predict(self, groups, train_x, train_y, test_x, test_y):
         """
-        prediction accuracy
-        Args:
-            groups: the result of stratification
-            train_x:
-            train_y:
-            test_x:
-            test_y:
+            prediction accuracy
+            Args:
+                groups: the train_x groups
+                train_x:
+                train_y:
+                test_x:
+                test_y:
 
-        Returns:
-            MSE
+            Returns:
+                MSE
 
-        """
-        low_breaks = list()
-        up_breaks = list()
-        group_labs = np.unique(groups)
-        predict_y = dict.fromkeys(group_labs)
-        for i in group_labs:
-            train_x_group = train_x[groups == i]
-            predict_y[i] = np.mean(train_y[groups == i])
-            low_breaks.append(np.min(train_x_group))
-            up_breaks.append(np.max(train_x_group))
+            """
 
-        low_breaks = np.array(low_breaks)
-        low_breaks.sort()
-        up_breaks = np.array(up_breaks)
-        up_breaks.sort()
-        # update the breaks, the interval is (-inf, b1), [b1,b2),..., [bk,inf)
-        breaks = (low_breaks[1:] + up_breaks[:-1]) / 2
-        breaks = breaks.astype(float)
-        breaks[0] = -np.inf
-        breaks[-1] = np.inf
-
-        test_groups = list()
-        for i in range(len(test_x)):
-            _, ind = np.unique(test_x[i] >= breaks, return_index=True)
-            test_groups.append(group_labs[ind[0] - 1])  #
-
-        test_labs = np.unique(test_groups)
-        mse = 0
-        for i in test_labs:
-            test_y_group = test_y[test_groups == i]
-            mse += np.sum(pow((test_y_group - predict_y[i]), 2))
+        test_group = self.predict_strata(groups, train_x, test_x)
+        #
+        train_pd = pd.DataFrame({"group": groups, "x": train_x, "train_y": train_y})
+        test_df = pd.DataFrame({"group": test_group, "x": test_x, "test_y": test_y})
+        pred = train_pd.groupby("group").mean()["train_y"].reset_index()
+        test_df = test_df.join(pred.set_index("group"), on="group")
+        test_df["error"] = pow(test_df["test_y"] - test_df["train_y"], 2)
+        mse = np.sum(test_df["error"])
 
         return mse
 
@@ -681,9 +677,9 @@ class optimal_geo_detector:
         Returns:
 
         """
-        rank_index = np.argsort(self.x)
+        rank_index = np.argsort(self.pop_x)
         recover_rank = np.argsort(rank_index)
-        group_x = self.x[rank_index]
+        group_x = self.pop_x[rank_index]
         group_info = self.groups[rank_index]
         labels, in1, in2, counts = np.unique(group_info, return_index=True, return_inverse=True, return_counts=True,
                                              axis=None)
@@ -716,15 +712,52 @@ class optimal_geo_detector:
 
         return inter_labs[recover_rank], sort_labs[recover_rank], lab_info
 
-    def predict_strata(self):
+    @staticmethod
+    def predict_strata(group_x, x, new_x):
         """
-        predict strata labels based on sampling data
-        Returns:
-            groups
+            predict strata labels based on sampling data
+            Returns:
+                groups
 
-        """
-        pass
+            """
+        low_breaks = list()
+        up_breaks = list()
+        group_labs, group_index = np.unique(group_x, return_index=True)
+        for i in group_labs:
+            x_group = x[group_x == i]
+            low_breaks.append(np.min(x_group))
+            up_breaks.append(np.max(x_group))
+
+        low_breaks = np.array(low_breaks)
+        low_breaks.sort()
+        up_breaks = np.array(up_breaks)
+        up_breaks.sort()
+        # update the breaks, the interval is (-inf, b1), [b1,b2),..., [bk,inf)
+        breaks = (low_breaks[1:] + up_breaks[:-1]) / 2
+        breaks = breaks.astype(float)
+        breaks = np.insert(breaks, 0, -np.inf)
+        breaks = np.append(breaks, np.max([np.max(x), np.max(new_x)]))
+        new_x_labs = pd.cut(np.array(new_x), breaks)
+        x_labs = pd.cut(np.array(x), breaks)
+        group_dict = dict(zip(x_labs[group_index], group_labs))
+        # new_x_labs.replace()
+        pred_group = pd.Series(new_x_labs).replace(group_dict)
+        return pred_group.to_numpy()
 
 
 if __name__ == '__main__':
-    pass
+    testdata = pd.read_csv("../data/test.csv")
+    x = testdata['ave_temp'].to_numpy()
+    y = testdata['ave_ndvi'].to_numpy()
+    gs_result = optimal_geo_detector(x, y,
+                                     criterion="squared_error",
+                                     max_group=10,
+                                     min_group=3,
+                                     min_samples_group=50,
+                                     cv_seed=1215,
+                                     min_delta_q=0.001,
+                                     cv_fold=10,
+                                     max_sample=1000,
+                                     sample_random_seed=101125,
+                                     ccp_alpha=0.0)
+    print(gs_result.groups)
