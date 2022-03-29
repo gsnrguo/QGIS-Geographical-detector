@@ -74,6 +74,7 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
     CV_TIMES = 'CV_TIMES'
     INTERPOLATION_DATA = 'INTERPOLATION_DATA'
     IMPROVING_Q = 'IMPROVING_Q'
+    MAX_SAMPLE = 'MAX_SAMPLE'
 
     def __init__(self):
         super().__init__()
@@ -146,6 +147,12 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         min_ratio.setFlags(min_ratio.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(min_ratio)
 
+        max_sample = QgsProcessingParameterNumber(self.MAX_SAMPLE, self.tr('The number of samples for stratification'),
+                                                  minValue=0, optional=True)
+        max_sample.setFlags(max_sample.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(max_sample)
+        # self.max_sample = max_sample
+
         improving_q = QgsProcessingParameterNumber(self.IMPROVING_Q, self.tr('Minimum threshold for q-value increase'),
                                                    minValue=0, maxValue=1, type=QgsProcessingParameterNumber.Double,
                                                    defaultValue=0, optional=True)
@@ -209,8 +216,13 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         cv_fold = self.parameterAsInt(parameters, self.CV_SIZE, context)
         cv_random_seed = self.parameterAsInt(parameters, self.CV_SEED, context)
         cv_rep = self.parameterAsInt(parameters, self.CV_TIMES, context)
+        stra_samp = self.parameterAsInt(parameters, self.MAX_SAMPLE, context)
 
+        feedback = QgsProcessingMultiStepFeedback(2, feedback)
         # update the advance parameters
+        # import pydevd_pycharm
+        # pydevd_pycharm.settrace('localhost', port=1010, stdoutToServer=True, stderrToServer=True)
+        total_sample = source.featureCount()
         if max_group == 0:
             max_group = None
         if min_group == 0:
@@ -219,9 +231,15 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
             min_group = 5
         if cv_random_seed == 0:
             cv_random_seed = None
+        if stra_samp > total_sample:
+            feedback.pushWarning(self.tr('\nWarnings: The number of samples for stratification exceeds maximum, and is '
+                                         'reset to feature count'))
+            stra_samp = total_sample
+        if stra_samp in [0, total_sample]:
+            stra_samp = None
 
         # get features from source
-        total = 100.0 / source.featureCount() if source.featureCount() else 0
+        total = 100.0 / total_sample if total_sample else 0
         features = source.getFeatures()
 
         if (len(category_field_names) == 0) & (len(numerical_field_names) == 0):
@@ -229,23 +247,24 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
         else:
             cols = category_field_names + numerical_field_names
             cols.insert(0, value_field_name)
-            cols.insert(0, pop_field)
+            if pop_field != "":
+                cols.insert(0, pop_field)
 
         # create the geo-detector raw data
         data_gen = ([f[col] for col in cols] for f in features)
         df = pd.DataFrame.from_records(data=data_gen, columns=cols)
 
         # checking the input data
-        feedback = QgsProcessingMultiStepFeedback(2, feedback)
-        #
-
         y = df[value_field_name]
         if not pd.api.types.is_numeric_dtype(y):
             raise TypeError('Study variable is not of a numeric type')
-        pop_data = df[pop_field]
-        if not pd.api.types.is_numeric_dtype(pop_data):
-            raise TypeError('Equality variable is not of a numeric type')
-        pop_data = pop_data.to_numpy()
+        if pop_field != "":
+            pop_data = df[pop_field]
+            if not pd.api.types.is_numeric_dtype(pop_data):
+                raise TypeError('Equality variable is not of a numeric type')
+            pop_data = pop_data.to_numpy()
+        else:
+            pop_data = None
 
         # stratification
         if len(numerical_field_names) > 0:
@@ -261,6 +280,7 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
                                                       max_group=max_group, pop_data=pop_data,
                                                       pop_threshold=pop_threshold,
                                                       cv_seed=cv_random_seed, cv_fold=cv_fold, cv_times=cv_rep,
+                                                      max_sample=stra_samp,
                                                       min_delta_q=inc_q)
                     x_group = gd_x.group_interval
                     cat_x_name = 'Cat_' + x
