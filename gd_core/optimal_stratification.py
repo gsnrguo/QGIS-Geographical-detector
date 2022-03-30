@@ -32,8 +32,8 @@ class optimal_geo_detector:
                  cv_fold=10,
                  cv_times=1,
                  lst_alpha=0.05,
-                 pop_data=None,
-                 pop_threshold=0,
+                 equal_data=None,
+                 equ_threshold=0,
                  max_sample=None,
                  sample_random_seed=None,
                  ccp_alpha=0.0):
@@ -51,13 +51,12 @@ class optimal_geo_detector:
             cv_fold:
             cv_times:
             lst_alpha:
-            pop_data: equality data
-            pop_threshold: equality ratio in each groups, [0,1]
+            equal_data: equality data
+            equ_threshold: equality ratio in each groups, [0,1]
             ccp_alpha:
         """
 
-        self.pop_data = pop_data
-        self.pop_threshold = pop_threshold
+        self.equ_threshold = equ_threshold
         if (cv_times > 1) & (cv_seed is not None):
             self.cv_seed = [cv_seed + i for i in range(cv_times)]
         else:
@@ -75,9 +74,12 @@ class optimal_geo_detector:
             sam_index = sam_rng.choice(range(len_pop), size=max_sample, replace=False)
             self.x = x[sam_index]
             self.y = y[sam_index]
+            self.y = y[sam_index]
+            self.equal_data = equal_data[sam_index]
         else:
             self.x = x
             self.y = y
+            self.equal_data = equal_data
 
         if max_group is None:
             self.max_group = int(len(self.y) / min_samples_group)
@@ -106,7 +108,7 @@ class optimal_geo_detector:
 
         self.sst = np.sum(pow(self.y - np.mean(self.y), 2))
 
-        self.split_group, self.metric = self.split(x=self.x, y=self.y, pop_data=self.pop_data)
+        self.split_group, self.metric = self.split(x=self.x, y=self.y, equal_data=self.equal_data)
         if len(set(self.split_group)) < self.max_group:
             self.max_group = len(set(self.split_group))
 
@@ -147,11 +149,11 @@ class optimal_geo_detector:
 
         return groups_best
 
-    def split(self, x, y, pop_data=None):
+    def split(self, x, y, equal_data=None):
         """
         split the x into groups minimizing the y
         Args:
-            pop_data: equality data
+            equal_data: equality data
             x:
             y:
 
@@ -163,8 +165,8 @@ class optimal_geo_detector:
         rank_index = np.argsort(x)
         y = y[rank_index]
         x = x[rank_index]
-        if pop_data is not None:
-            pop_data = pop_data[rank_index]
+        if equal_data is not None:
+            equal_data = equal_data[rank_index]
         alt_cut = np.diff(np.insert(x, 0, x[0])) != 0  # the same x should not be split
         group_list = [np.arange(len(y))]
         groups = np.ones(len(y)).astype(int)
@@ -182,7 +184,11 @@ class optimal_geo_detector:
                 y_val_var = np.var(y[group_index]) / y_len
                 sst = np.sum(pow((y[group_index]) - y_val, 2))
                 if len(group_index) >= self.min_samples_split:
-                    sub_cut, metric = self._split_cut(y[group_index], alt_cut[group_index], pop_data=pop_data)
+                    if (equal_data is not None) and (self.equ_threshold > 0):
+                        equal_group = equal_data[group_index]
+                    else:
+                        equal_group = None
+                    sub_cut, metric = self._split_cut(y[group_index], alt_cut[group_index], pop_data=equal_group)
                     if sub_cut is not None:
                         delta_q = (sst - metric) / self.sst
                         local_q = (sst - metric) / sst
@@ -406,11 +412,11 @@ class optimal_geo_detector:
                 select = np.in1d(option_cut, i)
                 train_y, test_y = self.y[~select], self.y[select]
                 train_x, test_x = self.x[~select], self.x[select]
-                if self.pop_data is not None:
-                    pop_train = self.pop_data[~select]
+                if self.equal_data is not None:
+                    pop_train = self.equal_data[~select]
                 else:
                     pop_train = None
-                groups, split_info = self.split(train_x, train_y, pop_data=pop_train)
+                groups, split_info = self.split(train_x, train_y, equal_data=pop_train)
                 nodes = split_info.loc[split_info['node_type'] == 'split_node', 'node'].to_numpy()
                 cut_groups = self._cv_info(train_y, groups, nodes, alpha)
                 mse_i = self.predict(cut_groups, train_x, train_y, test_x, test_y)
@@ -600,13 +606,15 @@ class optimal_geo_detector:
 
         """
         # global optimal_met
+        len_y = len(split_y)
         min_sg = self.min_samples_group
-        max_sg = len(split_y) - self.min_samples_group
+        max_sg = len_y - self.min_samples_group
 
         if pop_data is not None:
-            min_index = np.arange([np.cumsum(pop_data) >= self.pop_threshold])[0]
-            max_index = len(split_y) - np.arange([np.cumsum(pop_data[::-1]) >= np.sum(self.pop_data) *
-                                                  self.pop_threshold])[0]
+            threshold = np.sum(pop_data) * self.equ_threshold
+            # the first pos that cumsum > equ_threshold
+            min_index = np.arange(len_y)[np.cumsum(pop_data) >= threshold][0]
+            max_index = len_y - np.arange(len_y)[np.cumsum(pop_data[::-1]) >= threshold][0]
             min_sg = np.max([min_sg, min_index])
             max_sg = np.min([max_sg, max_index])
 
@@ -749,6 +757,7 @@ if __name__ == '__main__':
     testdata = pd.read_csv("../data/test.csv")
     x = testdata['ave_temp'].to_numpy()
     y = testdata['ave_ndvi'].to_numpy()
+    pop_data0 = testdata['ave_prec'].to_numpy()
     gs_result = optimal_geo_detector(x, y,
                                      criterion="squared_error",
                                      max_group=10,
@@ -757,6 +766,7 @@ if __name__ == '__main__':
                                      cv_seed=1215,
                                      min_delta_q=0.001,
                                      cv_fold=10,
+                                     equal_data=pop_data0,
                                      max_sample=1000,
                                      sample_random_seed=101125,
                                      ccp_alpha=0.0)

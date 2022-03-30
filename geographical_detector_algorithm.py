@@ -277,8 +277,8 @@ class Geo_detectorAlgorithm(QgsProcessingAlgorithm):
                     xdata = df[x]
                     gd_x = op_st.optimal_geo_detector(x=xdata.to_numpy(), y=y.to_numpy(), min_group=min_group,
                                                       min_samples_group=min_sample,
-                                                      max_group=max_group, pop_data=pop_data,
-                                                      pop_threshold=pop_threshold,
+                                                      max_group=max_group, equal_data=pop_data,
+                                                      equ_threshold=pop_threshold,
                                                       cv_seed=cv_random_seed, cv_fold=cv_fold, cv_times=cv_rep,
                                                       max_sample=stra_samp,
                                                       min_delta_q=inc_q)
