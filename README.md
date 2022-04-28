@@ -12,6 +12,9 @@ Geographical detector, or GeoDetector, is a statistical tool to measure Spatial 
 
 ![Menus and procedure for one-time activation of the Geographical detector plugin within QGIS](image/Snipaste_2022-04-01_12-18-20.png)
 
+## Parameters
+![Q_GD GUI](image/Q_GD GUI.png)
+
 ## References
 1. Wang JF, Li XH, Christakos G, Liao YL, Zhang T, Gu X & Zheng XY. 2010. Geographical detectors-based health risk assessment and its application in the neural tube defects study of the Heshun region, China. International Journal of Geographical Information Science 24(1): 107-127.
 2. Wang JF, Zhang TL, Fu BJ. 2016. A measure of spatial stratified heterogeneity. Ecological Indicators 67: 250-256.
