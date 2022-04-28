@@ -36,6 +36,10 @@ Geographical detector, or GeoDetector, is a statistical tool to measure Spatial 
 8. Cross-validation random stata [optional]: random seed, if a random seed is given so that the results of the running are reproducible
 9. Times of repeating cross-validation [optional] : Improving the stability of stratification results.
 
+### Author
+
+Jiangang Guo <guojg@lreis.ac.cn>, Jinfeng Wang <wangjf@lreis.ac.cn>
+
 ## References
 1. Wang JF, Li XH, Christakos G, Liao YL, Zhang T, Gu X & Zheng XY. 2010. Geographical detectors-based health risk assessment and its application in the neural tube defects study of the Heshun region, China. International Journal of Geographical Information Science 24(1): 107-127.
 2. Wang JF, Zhang TL, Fu BJ. 2016. A measure of spatial stratified heterogeneity. Ecological Indicators 67: 250-256.
