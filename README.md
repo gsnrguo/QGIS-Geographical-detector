@@ -19,10 +19,12 @@ Geographical detector, or GeoDetector, is a statistical tool to measure Spatial 
 2. Study variable : field name of study variable 
 3. Field(s) with categories [optional]: field(s) of categories explanatory variables
 4. Field(s) with numeric [optional]: field(s) of  numeric explanatory variables 
-***Parameters 3 and 4 cannot both be null***
+  
+***Parameters 3 and 4 cannot both be empty***
+***If parameter 4 is not empty, then a stratification procedure is required.***
 
 ### Advanced parameters (stratification parameters)
-***If parameter 4 is not empty, then a stratification procedure is required. ***
+
 1. Maximum number of groups [optional]: Maximum number of strata, if the Maximum number is equal to 
 2. Minimum number of groups [optional]: 
 3. Field for equality constraint [optional]: equality means the populations/geographical areas in the new strata are of sufficient size and as similar as possible
