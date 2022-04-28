@@ -21,7 +21,8 @@ Geographical detector, or GeoDetector, is a statistical tool to measure Spatial 
 4. Field(s) with numeric [optional]: field(s) of  numeric explanatory variables 
   
 ***Parameters 3 and 4 cannot both be empty***
-  ***If parameter 4 is not empty, then a stratification procedure is required.***
+  
+***If parameter 4 is not empty, then a stratification procedure is required.***
 
 ### Advanced parameters (stratification parameters)
 
