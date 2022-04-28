@@ -20,9 +20,7 @@ Geographical detector, or GeoDetector, is a statistical tool to measure Spatial 
 3. Field(s) with categories [optional]: field(s) of categories explanatory variables
 4. Field(s) with numeric [optional]: field(s) of  numeric explanatory variables 
   
-***Parameters 3 and 4 cannot both be empty***
-  
-***If parameter 4 is not empty, then a stratification procedure is required.***
+  *Parameters 3 and 4 cannot both be empty, if parameter 4 is not empty, then a stratification procedure is required.*
 
 ### Advanced parameters (stratification parameters)
 
@@ -38,7 +36,7 @@ Geographical detector, or GeoDetector, is a statistical tool to measure Spatial 
 
 ### Author
 
-Jiangang Guo <guojg@lreis.ac.cn>, Jinfeng Wang <wangjf@lreis.ac.cn>
+  Jiangang Guo (<guojg@lreis.ac.cn>); Jinfeng Wang (<wangjf@lreis.ac.cn>)
 
 ## References
 1. Wang JF, Li XH, Christakos G, Liao YL, Zhang T, Gu X & Zheng XY. 2010. Geographical detectors-based health risk assessment and its application in the neural tube defects study of the Heshun region, China. International Journal of Geographical Information Science 24(1): 107-127.
