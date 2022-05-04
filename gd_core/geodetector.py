@@ -13,6 +13,7 @@ from itertools import combinations
 import xlwt
 from xlwt import easyxf
 from scipy.stats import f, levene, ncf, ttest_ind
+from scipy.special import ncfdtrinc
 
 gd_path = os.path.dirname(__file__)
 
@@ -56,15 +57,16 @@ class GeoDetector(object):
         Compares the accumulated dispersion variance of each sub-group with the dispersion variance of the all
         """
         len_x = len(self.x_names)
-        factor_result = pd.DataFrame({"q": [0] * len_x, "p-value": [0] * len_x, "num_strata": [0] * len_x})
+        factor_result = pd.DataFrame(
+            {"q": [0] * len_x, "p-value": [0] * len_x, "num_strata": [0] * len_x, "ci_90": None, "ci_95": None, "ci_99": None})
         factor_result.index = self.x_names
         for x_name in self.x_names:
             data_i = self.data[[x_name, self.y_name]]
             mean_h = data_i.groupby(x_name)[self.y_name].mean()
             var_h = data_i.groupby(x_name)[self.y_name].agg(np.var, ddof=0)
             n_h = data_i.groupby(x_name)[self.y_name].count()
-            q_i, sig_i = self._q_calculate(mean_h, var_h, n_h)
-            factor_result.loc[x_name, :] = [q_i, sig_i, len(n_h)]
+            q_i, sig_i, ci_90, ci_95, ci_99 = self._q_calculate(mean_h, var_h, n_h)
+            factor_result.loc[x_name, :] = [q_i, sig_i, len(n_h), ci_90, ci_95, ci_99]
 
         return factor_result
 
@@ -130,7 +132,7 @@ class GeoDetector(object):
                 mean_h = temp_data.groupby("inter_name")[self.y_name].mean()
                 var_h = temp_data.groupby("inter_name")[self.y_name].agg(np.var, ddof=0)
                 n_h = temp_data.groupby("inter_name")[self.y_name].count()
-                q_i, sig_i = self._q_calculate(mean_h, var_h, n_h)
+                q_i, sig_i, _, _, _ = self._q_calculate(mean_h, var_h, n_h)
                 interaction_result_q[j, i] = q_i
                 interaction_result_sig[j, i] = sig_i
                 # interaction
@@ -177,11 +179,24 @@ class GeoDetector(object):
         len_stratum = var_h.size
         sse = np.dot(var_h, n_h)
         q_i = 1 - sse / self.sst
+        dfn = len_stratum - 1
+        dfd = self.n - len_stratum
         # sig
-        fv = (self.n - len_stratum) * q_i / ((len_stratum - 1) * (1 - q_i))
+        fv = dfd * q_i / (dfn * (1 - q_i))
         nc_para = (pow(mean_h, 2).sum() - pow(np.dot(np.sqrt(n_h), mean_h), 2) / self.n) / self.var_sam
-        sig_i = 1 - ncf.cdf(fv, len_stratum - 1, self.n - len_stratum, nc_para)
-        return q_i, sig_i
+        sig_i = 1 - ncf.cdf(fv, dfn, dfd, nc_para)
+        #  confidence interval
+        ncp_inter_90 = ncfdtrinc(dfn, dfd, [0.95, 0.05], fv)
+        q_inter_90 = ncp_inter_90 / (ncp_inter_90 + dfn + dfd + 1)
+        ncp_inter_95 = ncfdtrinc(dfn, dfd, [0.975, 0.025], fv)
+        q_inter_95 = ncp_inter_95 / (ncp_inter_95 + dfn + dfd + 1)
+        ncp_inter_99 = ncfdtrinc(dfn, dfd, [0.995, 0.005], fv)
+        q_inter_99 = ncp_inter_99 / (ncp_inter_99 + dfn + dfd + 1)
+        # format the interval
+        ci_90 = ('%.4f' % q_inter_90[0]) + "-" + ('%.4f' % q_inter_90[1])
+        ci_95 = ('%.4f' % q_inter_95[0]) + "-" + ('%.4f' % q_inter_95[1])
+        ci_99 = ('%.4f' % q_inter_99[0]) + "-" + ('%.4f' % q_inter_99[1])
+        return q_i, sig_i, ci_90, ci_95, ci_99
 
     def stat_stratum(self, x_name):
         var_st = self.data.groupby(x_name)[self.y_name].agg(
@@ -330,4 +345,5 @@ class GeoDetector(object):
 
 if __name__ == '__main__':
     testdata = pd.read_csv("../data/collectdata.csv")
-    gd_result = GeoDetector(testdata, ["watershed"], "incidence", alpha=0.05)
+    gd_result = GeoDetector(testdata, ["watershed", "soiltype", "elevation"], "incidence", alpha=0.05)
+    gd_result.save_to_xls("test.xls")
