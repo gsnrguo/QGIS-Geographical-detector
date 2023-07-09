@@ -17,7 +17,7 @@ Geographical detector, or GeoDetector, is a statistical tool to measure Spatial 
 ### Basic parameters
 1. Input layer: vector layer 
 2. Study variable : field name of study variable 
-3. Field(s) with categories [optional]: field(s) of categories explanatory variables
+3. Field(s) with categories [optional]: field(s) of categorical explanatory variables
 4. Field(s) with numeric [optional]: field(s) of  numeric explanatory variables 
   
   *Parameters 3 and 4 cannot both be empty, if parameter 4 is not empty, then a stratification procedure is required.*
