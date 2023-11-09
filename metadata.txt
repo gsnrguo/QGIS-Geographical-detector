@@ -12,8 +12,8 @@ email=guojg@lreis.ac.cn
 
 about=Spatial Stratified Heterogeneity (SSH) refers to the phenomena that the within strata are more similar than the between strata.Examples are land-use types and climate zones in spatial data. Geographical detector is a statistical tool to measure SSH and to make attribution for/by SSH; (1) measure and find SSH among data; (2) test the coupling between two variables Y and X and (3) investigate interaction between two explanatory variables X1 and X2 to a response variable Y.
 
-tracker=https://github.com/gsnrguo/QGIS-Geographical-detector/issues
-repository=https://github.com/gsnrguo/QGIS-Geographical-detector
+tracker=https://github.com/GuoXiaoyin/QGIS-Geographical-detector/issues
+repository=https://github.com/GuoXiaoyin/QGIS-Geographical-detector
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,7 +25,7 @@ hasProcessingProvider=yes
 # Tags are comma separated with spaces allowed
 tags=python, spatial analysis, stratification, spatial heterogeneity, geographical detector
 
-homepage=https://plugins.qgis.org/plugins/geographical-detector/
+homepage=https://github.com/GuoXiaoyin/QGIS-Geographical-detector
 category=Analysis
 icon=icon.png
 # experimental flag
