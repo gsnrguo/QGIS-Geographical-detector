@@ -25,7 +25,7 @@ hasProcessingProvider=yes
 # Tags are comma separated with spaces allowed
 tags=python, spatial analysis, stratification, spatial heterogeneity, geographical detector
 
-homepage=https://github.com/GuoXiaoyin/QGIS-Geographical-detector
+homepage=https://plugins.qgis.org/plugins/geographical-detector/
 category=Analysis
 icon=icon.png
 # experimental flag
